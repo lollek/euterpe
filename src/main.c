@@ -22,32 +22,33 @@ void handle_input(sp_session *sess) {
       case 'h': {
         printf("Commands:\n\n"
 
-               "next\t\t\t - next track\n"
-               "prev\t\t\t - previous track\n\n"
+               "next\t\t - next track\n"
+               "prev\t\t - previous track\n\n"
 
-               "d\t\t\t - toggle debug mode\n"
-               "l\t\n"
-               " t / tracks\t\t - list tracks\n"
-               " p / playlists\t\t - list playlists\n"
-               "p\t\n"
-               " l <number>\t\t - play list\n"
-               " t <number>\t\t - play track\n"
-               "q\t\t\t - quit\n");
+               "d\t\t - toggle debug mode\n"
+               "lt\t\t - list tracks\n"
+               "ll\t\t - list playlists\n"
+               "pt <number>\t - play track\n"
+               "pl <number>\t - play playlist\n"
+               "q\t\t - quit\n");
       } break;
         
       case 'l': {
-        if (strlen(cmd) > 2 && !strncmp(cmd, "l ", 2)) {
-          if (!strcmp(cmd, "l t\n"))
-            euterpe_display_tracks();
-          else if (strlen(cmd) >= 7 && !strncmp(cmd, "l track\n", 7))
-            euterpe_display_tracks();
-          else if (!strcmp(cmd, "l p\n"))
-            euterpe_display_playlists(sess);
-          else if (strlen(cmd) >= 10 && !strcmp(cmd, "l playlist\n")) 
-            euterpe_display_playlists(sess);
+
+        /* lt - list tracks: */
+        if (*(p+1) == 't') {
+          if (strlen(cmd) > 3)
+            euterpe_display_tracks(sess, atoi(cmd + 3));
           else
-            printf("Unknown command. Type h for help\n");
+            euterpe_display_tracks(sess, -1);
         }
+
+        /* ll - list playlists: */
+        else if (*(p+1) == 'l')
+          euterpe_display_playlists(sess);
+
+        else
+          printf("Unknown command. Type h for help\n");
       } break;
 
       case 'n': {
@@ -56,12 +57,27 @@ void handle_input(sp_session *sess) {
       } break;
       
       case 'p': {
-        if (!strcmp(cmd, "prev\n"))
+        
+        /* pt <number> - play track: */
+        if (*(p+1) == 't') {
+          if (strlen(cmd) > 3)
+            euterpe_change_track(sess, 1, atoi(cmd + 3));
+          else
+            printf("usage: pt <number>\n");
+        }
+
+        /* pl <number> - play playlist: */
+        else if (*(p+1) == 'l') {
+          if (strlen(cmd) > 3)
+            euterpe_play_list(sess, atoi(cmd + 3));
+          else
+            printf("usage: pl <number>\n");
+        }
+        
+        /* prev - play previous track: */
+        else if (!strcmp(cmd, "prev\n"))
           euterpe_change_track(sess, 0, -1);
-        else if (strlen(cmd) > 4 && !strncmp(cmd, "p t ", 4))
-          euterpe_change_track(sess, 1, atoi(cmd + 4));
-        else if (strlen(cmd) > 4 && !strncmp(cmd, "p l ", 4))
-          euterpe_play_list(sess, atoi(cmd + 4));
+          
         else
           printf("Unknown command. Type h for help\n");
       } break;
@@ -87,6 +103,7 @@ int main(int argc, char** argv) {
   
   fprintf(stdout, "Euterpe v0.1\n\n");
   
+  /* Get argv's: */
   while ((c = getopt(argc, argv, "dl:u:")) != -1) {
     switch (c) {
       case 'd': debug = 1; break;
@@ -95,24 +112,26 @@ int main(int argc, char** argv) {
     }
   }
   
+  /* Username handling: */
   if (username == NULL) {
     printf("Username: ");
     fflush(stdout);
     fgets(buf, sizeof(buf), stdin);
     username = buf;
   }
-
-  if (strlen(username) < 2) {
+  if (strlen(username) <= 0) {
     printf("Blank username received\n");
     return 1;
   }
-  
+
+  /* Password Handling: */
   password = getpass("Password: ");
-  if (strlen(password) < 1) {
+  if (strlen(password) <= 0) {
     printf("Blank password received\n");
     return 1;
   }
   
+  /* Create session: */
   if (euterpe_init(&sess, username, password, blob) != 0
       || sess == NULL) {
     printf("Failed to create a spotify session\n");
@@ -120,8 +139,8 @@ int main(int argc, char** argv) {
   }
   free(password);
   
+  /* Main: */
   handle_input(sess);
-  
   euterpe_exit(sess);
 
   return 0;

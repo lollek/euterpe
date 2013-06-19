@@ -30,7 +30,7 @@ int euterpe_init(sp_session** sess, const char* username,
     return 1;
   }
 
-  /* Set configuration: */
+  /* Set pre-login configuration: */
   callbacks.logged_in = &logged_in;
   callbacks.logged_out = &euterpe_exit;
   callbacks.metadata_updated = &metadata_updated;
@@ -155,8 +155,8 @@ void euterpe_play_list(sp_session* sess, int listnum) {
    
    num_lists = sp_playlistcontainer_num_playlists(cont);
    
-   if (-1 > listnum || listnum > num_lists) {
-     printf("Could not find playlists %d", listnum);
+   if (-1 > listnum || listnum >= num_lists) {
+     printf("Could not find playlist %d", listnum);
      return;
    }
    
@@ -178,21 +178,30 @@ void euterpe_change_track(sp_session* sess, int force_set_track, int modifier) {
   
   available_tracks = sp_playlist_num_tracks(g_playlist);
 
-  if (force_set_track)
+  if (force_set_track) {
+    if (0 > modifier || modifier > available_tracks -1) {
+      printf("Please set a number between 0-%d\n", available_tracks -1);
+      return;
+    }
     g_track_num = modifier;
-  else
+  }
+
+  else {
     g_track_num += modifier;
-  while (g_track_num >= available_tracks)
-    g_track_num -= available_tracks;
-  while (g_track_num < 0)
-    g_track_num += available_tracks;
+
+    while (g_track_num >= available_tracks)
+      g_track_num -= available_tracks;
+    while (g_track_num < 0)
+      g_track_num += available_tracks;
+  }
+
+
 
   audio_fifo_flush(&g_audio);
   sp_session_player_unload(sess);
   
   track = sp_playlist_track(g_playlist, g_track_num);
-  printf("Now playing:\n"
-         "%d: %s - %s\n", g_track_num, sp_artist_name(sp_track_artist(track, 0)),
+  printf("%d: %s - %s\n", g_track_num, sp_artist_name(sp_track_artist(track, 0)),
          sp_track_name(track));
   
   sp_session_player_load(sess, sp_playlist_track(g_playlist, g_track_num));
@@ -210,7 +219,8 @@ void euterpe_change_track(sp_session* sess, int force_set_track, int modifier) {
       case 3: printf("Track is banned by artist's request\n"); break;
       default: printf("Unknown availability error\n"); break;
     }
-    
+    printf("Skipping to next ..\n");
+    euterpe_change_track(sess, 0, 1);
   }
 }
 
@@ -233,22 +243,45 @@ void euterpe_display_playlists(sp_session* sess) {
   }
 }
 
-void euterpe_display_tracks(void) {
+void euterpe_display_tracks(sp_session *sess, int playlist_num) {
 
-  int i, num_tracks;
-  sp_track *track;
+  sp_playlistcontainer *cont = sp_session_playlistcontainer(sess);
+  int i, num_tracks, num_lists;
+  sp_track *track = NULL;
+  sp_playlist *playlist = NULL;
 
-  if (g_playlist == NULL) {
-    printf("No playlist selected\n");
-    return;
+  /* Display current playlist: */
+  if (playlist_num == -1) {
+
+    if (g_playlist == NULL) {
+      printf("No playlist selected\n");
+      return;
+    }
+    
+    else
+      playlist = g_playlist;
   }
   
-  num_tracks = sp_playlist_num_tracks(g_playlist);
+  /* Display playlist <playlist_num>: */
+  else {
 
-  printf("--- %s has %d tracks: ---\n", sp_playlist_name(g_playlist), num_tracks);
-  for (i = 0; i < num_tracks; i++) {
-    track = sp_playlist_track(g_playlist, i);
-    printf("%d: %s - %s\n", i, sp_artist_name(sp_track_artist(track, 0)), 
-           sp_track_name(track));
+    num_lists = sp_playlistcontainer_num_playlists(cont);
+ 
+    if (0 > playlist_num || playlist_num >= num_lists) {
+      printf("Could not find playlist\n");
+      return;
+    }
+
+    else
+      playlist = sp_playlistcontainer_playlist(cont, playlist_num);
   }
+
+  num_tracks = sp_playlist_num_tracks(playlist);
+
+    printf("--- %s has %d tracks: ---\n", sp_playlist_name(playlist), num_tracks);
+    for (i = 0; i < num_tracks; i++) {
+      track = sp_playlist_track(playlist, i);
+      printf("%d: %s - %s\n", i, sp_artist_name(sp_track_artist(track, 0)), 
+             sp_track_name(track));
+    }
 }

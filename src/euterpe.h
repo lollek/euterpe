@@ -44,6 +44,6 @@ void euterpe_loop_activate(sp_session* sess);
 void euterpe_play_list(sp_session* sess, int listnum);
 void euterpe_change_track(sp_session* sess, int force_set_track, int modifier);
 void euterpe_display_playlists(sp_session* sess);
-void euterpe_display_tracks(void);
+void euterpe_display_tracks(sp_session *sess, int playlist_num);
 
 #endif
