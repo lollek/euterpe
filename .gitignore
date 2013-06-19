@@ -1,5 +1,8 @@
 tmp
-src/*.o
-src/appkey.c
 euterpe
 .cache
+src/appkey.c
+src/alsa_audio.o
+src/euterpe.o
+src/spotify_callbacks.o
+src/main.o
