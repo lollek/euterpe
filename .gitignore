@@ -1,0 +1,5 @@
+tmp
+src/*.o
+src/appkey.c
+euterpe
+.cache
