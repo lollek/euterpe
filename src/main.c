@@ -28,6 +28,7 @@ void handle_input(sp_session *sess) {
                "d\t\t - toggle debug mode\n"
                "lt\t\t - list tracks\n"
                "ll\t\t - list playlists\n"
+               "p\t\t - toggle play/pause"
                "pt <number>\t - play track\n"
                "pl <number>\t - play playlist\n"
                "q\t\t - quit\n");
@@ -53,30 +54,34 @@ void handle_input(sp_session *sess) {
 
       case 'n': {
         if (!strcmp(cmd, "next\n"))
-          euterpe_change_track(sess, 0, 1);
+          euterpe_play_track(sess, 0, 1);
       } break;
       
       case 'p': {
-        
+
+        /* p - toggle pause/play: */
+        if (*(p+1) == '\n')
+          euterpe_play_pause_toggle(sess);
+
         /* pt <number> - play track: */
-        if (*(p+1) == 't') {
-          if (strlen(cmd) > 3)
-            euterpe_change_track(sess, 1, atoi(cmd + 3));
+        else if (*(p+1) == 't') {
+          if (strlen(cmd) > 4)
+            euterpe_play_track(sess, 1, atoi(cmd + 3));
           else
             printf("usage: pt <number>\n");
         }
 
         /* pl <number> - play playlist: */
         else if (*(p+1) == 'l') {
-          if (strlen(cmd) > 3)
-            euterpe_play_list(sess, atoi(cmd + 3));
+          if (strlen(cmd) > 4)
+            euterpe_set_playlist(sess, atoi(cmd + 3));
           else
             printf("usage: pl <number>\n");
         }
         
         /* prev - play previous track: */
         else if (!strcmp(cmd, "prev\n"))
-          euterpe_change_track(sess, 0, -1);
+          euterpe_play_track(sess, 0, -1);
           
         else
           printf("Unknown command. Type h for help\n");
@@ -101,7 +106,7 @@ int main(int argc, char** argv) {
   char *blob = NULL;
   sp_session *sess = NULL;
   
-  fprintf(stdout, "Euterpe v0.1\n\n");
+  fprintf(stdout, "Euterpe v0.1.1\n\n");
   
   /* Get argv's: */
   while ((c = getopt(argc, argv, "dl:u:")) != -1) {

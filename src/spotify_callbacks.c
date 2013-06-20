@@ -106,7 +106,7 @@ void end_of_track(sp_session* sess) {
   if (debug)
     fprintf(stdout, "\033[1;30mEnd of track!\033[0m\n");
   
-  euterpe_change_track(sess, 0, 1);
+  euterpe_play_track(sess, 0, 1);
 }
 
 void streaming_error(sp_session* sess, sp_error err) {

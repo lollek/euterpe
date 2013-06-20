@@ -41,8 +41,9 @@ int euterpe_init(sp_session** sess, const char* username,
 void euterpe_exit(sp_session* sess);
 void *euterpe_loop(void* arg);
 void euterpe_loop_activate(sp_session* sess);
-void euterpe_play_list(sp_session* sess, int listnum);
-void euterpe_change_track(sp_session* sess, int force_set_track, int modifier);
+void euterpe_set_playlist(sp_session* sess, int listnum);
+void euterpe_play_track(sp_session* sess, int force_set_track, int modifier);
+void euterpe_play_pause_toggle(sp_session* sess);
 void euterpe_display_playlists(sp_session* sess);
 void euterpe_display_tracks(sp_session *sess, int playlist_num);
 

@@ -1,0 +1,22 @@
+MAJOR:
+ curses gui
+  currently-playing <- artist <- track <- at@sec/min <- total@sec/min <- playing-bar?
+ last.fm scrobble
+ daemon-mode for kilo
+ searching for tracks/artists
+ stop using spotify's alsa-audio.h/c
+
+MINOR:
+ bitrate? 
+
+BUGS:
+ End-of-track is way too slow, noticable gap between tracks
+ pause is not instant - takes a second or so. (play is instant though)
+ src/alsa_audio.h:47:10: warning: ISO C forbids zero-size array ‘samples’
+
+DONE:
+ Added some documentation
+ renamed euterpe_play_list to euterpe_set_playlist, which no longer auto-stats music
+ renamed euterpe_change_track to euterpe_play_track
+ added euterpe_play_pause_toggle which pauses/plays songs
+ minor bugfixes

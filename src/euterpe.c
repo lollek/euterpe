@@ -5,6 +5,7 @@ audio_fifo_t g_audio;
 
 static int g_logged_in = 0;
 static int g_track_num = 0;
+static int g_is_playing = 1;
 static sp_playlist *g_playlist = NULL;
 static pthread_t g_thread;
 static pthread_cond_t g_action_needed;
@@ -137,13 +138,17 @@ void *euterpe_loop(void* arg) {
 }
 
 void euterpe_loop_activate(sp_session* sess) {
+
   UNUSED(sess);
+
   if (debug)
     fprintf(stdout, "\033[1;30mnotify main thread!\033[0m\n");
+
   pthread_cond_signal(&g_action_needed);
+
 }
 
-void euterpe_play_list(sp_session* sess, int listnum) {
+void euterpe_set_playlist(sp_session* sess, int listnum) {
   
    sp_playlistcontainer *cont = sp_session_playlistcontainer(sess);
    int num_lists;
@@ -155,18 +160,26 @@ void euterpe_play_list(sp_session* sess, int listnum) {
    
    num_lists = sp_playlistcontainer_num_playlists(cont);
    
-   if (-1 > listnum || listnum >= num_lists) {
-     printf("Could not find playlist %d", listnum);
+   if (0 > listnum || listnum >= num_lists) {
+     printf("Playlist not found\n");
      return;
    }
    
    g_track_num = 0;
    g_playlist = sp_playlistcontainer_playlist(cont, listnum);
-   euterpe_change_track(sess, 0, 0);
+   printf("Playlist changed to %s\n", sp_playlist_name(g_playlist));
 
 }
 
-void euterpe_change_track(sp_session* sess, int force_set_track, int modifier) {
+void euterpe_play_pause_toggle(sp_session* sess) {
+  
+  g_is_playing = !g_is_playing;
+  sp_session_player_play(sess, g_is_playing);
+  
+  printf("%s playback", g_is_playing? "Paused":"Unpaused");
+}
+
+void euterpe_play_track(sp_session* sess, int force_set_track, int modifier) {
   
   int available_tracks; 
   sp_track *track = NULL;
@@ -177,7 +190,10 @@ void euterpe_change_track(sp_session* sess, int force_set_track, int modifier) {
     return;
   
   available_tracks = sp_playlist_num_tracks(g_playlist);
-
+  
+  
+  /* If force_track_set is 1, the track will be changed to int modifier.
+       in case track is out of range, it will just return */
   if (force_set_track) {
     if (0 > modifier || modifier > available_tracks -1) {
       printf("Please set a number between 0-%d\n", available_tracks -1);
@@ -186,6 +202,9 @@ void euterpe_change_track(sp_session* sess, int force_set_track, int modifier) {
     g_track_num = modifier;
   }
 
+  /* If force_track_set is 0 then the g_track_num wraps around the playlist, 
+       i.e. it will play the first song in the list after the last song is over
+       it will also move forward/backward x songs instead of changing to song x */
   else {
     g_track_num += modifier;
 
@@ -195,18 +214,21 @@ void euterpe_change_track(sp_session* sess, int force_set_track, int modifier) {
       g_track_num += available_tracks;
   }
 
-
-
+  /* Remove everything in the audio queue and stop playback: */
   audio_fifo_flush(&g_audio);
   sp_session_player_unload(sess);
   
+  /* Set the new track and start playback: */
   track = sp_playlist_track(g_playlist, g_track_num);
   printf("%d: %s - %s\n", g_track_num, sp_artist_name(sp_track_artist(track, 0)),
          sp_track_name(track));
   
   sp_session_player_load(sess, sp_playlist_track(g_playlist, g_track_num));
   sp_session_player_play(sess, 1);
+  g_is_playing = 1;
 
+  /* Check if we actually managed to play the song. 
+       If we failed, skip to next song */
   if ((err = sp_track_error(track)) != SP_ERROR_OK)
     printf("Unable to play track: %s\n", sp_error_message(err));
   
@@ -220,7 +242,7 @@ void euterpe_change_track(sp_session* sess, int force_set_track, int modifier) {
       default: printf("Unknown availability error\n"); break;
     }
     printf("Skipping to next ..\n");
-    euterpe_change_track(sess, 0, 1);
+    euterpe_play_track(sess, 0, 1);
   }
 }
 
@@ -246,36 +268,23 @@ void euterpe_display_playlists(sp_session* sess) {
 void euterpe_display_tracks(sp_session *sess, int playlist_num) {
 
   sp_playlistcontainer *cont = sp_session_playlistcontainer(sess);
-  int i, num_tracks, num_lists;
+  int i, num_tracks;
   sp_track *track = NULL;
   sp_playlist *playlist = NULL;
 
-  /* Display current playlist: */
-  if (playlist_num == -1) {
+  /* Select playlist: */
+  if (playlist_num == -1 && g_playlist != NULL)
+    playlist = g_playlist;
 
-    if (g_playlist == NULL) {
-      printf("No playlist selected\n");
-      return;
-    }
-    
-    else
-      playlist = g_playlist;
-  }
-  
-  /* Display playlist <playlist_num>: */
+  else if (0 <= playlist_num && playlist_num < sp_playlistcontainer_num_playlists(cont))
+    playlist = sp_playlistcontainer_playlist(cont, playlist_num);
+
   else {
-
-    num_lists = sp_playlistcontainer_num_playlists(cont);
- 
-    if (0 > playlist_num || playlist_num >= num_lists) {
       printf("Could not find playlist\n");
       return;
-    }
-
-    else
-      playlist = sp_playlistcontainer_playlist(cont, playlist_num);
   }
 
+  /* Display the playlist: */
   num_tracks = sp_playlist_num_tracks(playlist);
 
     printf("--- %s has %d tracks: ---\n", sp_playlist_name(playlist), num_tracks);
