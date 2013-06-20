@@ -15,8 +15,3 @@ BUGS:
  src/alsa_audio.h:47:10: warning: ISO C forbids zero-size array ‘samples’
 
 DONE:
- Added some documentation
- renamed euterpe_play_list to euterpe_set_playlist, which no longer auto-stats music
- renamed euterpe_change_track to euterpe_play_track
- added euterpe_play_pause_toggle which pauses/plays songs
- minor bugfixes

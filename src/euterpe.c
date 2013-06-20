@@ -4,8 +4,8 @@ int debug = 0;
 audio_fifo_t g_audio;
 
 static int g_logged_in = 0;
-static int g_track_num = 0;
 static int g_is_playing = 1;
+static int g_track_num = 0;
 static sp_playlist *g_playlist = NULL;
 static pthread_t g_thread;
 static pthread_cond_t g_action_needed;

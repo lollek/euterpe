@@ -106,7 +106,7 @@ int main(int argc, char** argv) {
   char *blob = NULL;
   sp_session *sess = NULL;
   
-  fprintf(stdout, "Euterpe v0.1.1\n\n");
+  fprintf(stdout, "Euterpe v0.1.2\n\n");
   
   /* Get argv's: */
   while ((c = getopt(argc, argv, "dl:u:")) != -1) {
@@ -121,7 +121,11 @@ int main(int argc, char** argv) {
   if (username == NULL) {
     printf("Username: ");
     fflush(stdout);
+    
     fgets(buf, sizeof(buf), stdin);
+    for(username = buf; *username != '\0'; username++)
+      if (*username == '\n')
+        *username = '\0';
     username = buf;
   }
   if (strlen(username) <= 0) {
