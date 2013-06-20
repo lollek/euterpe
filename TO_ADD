@@ -1,13 +1,15 @@
 MAJOR:
  curses gui
   currently-playing <- artist <- track <- at@sec/min <- total@sec/min <- playing-bar?
- last.fm scrobble
  daemon-mode for kilo
- searching for tracks/artists
  stop using spotify's alsa-audio.h/c
 
+MEDIUM:
+ searching for tracks/artists
+ last.fm scrobble
+
 MINOR:
- bitrate? 
+
 
 BUGS:
  End-of-track is way too slow, noticable gap between tracks
@@ -15,3 +17,11 @@ BUGS:
  src/alsa_audio.h:47:10: warning: ISO C forbids zero-size array ‘samples’
 
 DONE:
+ Removed all "Relogin" and "Blob instead of password" entries in the code
+ Fixed the application arguments
+  Application now gives some usage help and exits on wrong arguments
+  Fixed minor bug with optargs
+ Application now automatically asks for the highest possible bitrate
+  Not sure if there'll ever be a reason to NOT have the highest? 
+ Added force-update command which is only available in debug-mode, which \
+  forces an update on the euterpe-loop

@@ -158,15 +158,6 @@ void offline_error(sp_session* sess, sp_error err) {
   */
 }
 
-void credentials_blob_updated(sp_session* sess, const char* blob) {
-  UNUSED(sess);
-  if (debug)
-    fprintf(stdout, "\033[1;30mReceived blob: %s\033[0m\n", blob);
-  /* OPT
-     Do I need to do more than this?
-  */
-}
-
 void connectionstate_updated(sp_session* sess) {
   UNUSED(sess);
   if (debug)

@@ -30,14 +30,12 @@ void stop_playback(sp_session* sess);
 void get_audio_buffer_stats(sp_session* sess, sp_audio_buffer_stats *stats);
 void offline_status_updated(sp_session* sess);
 void offline_error(sp_session* sess, sp_error err);
-void credentials_blob_updated(sp_session* sess, const char* blob);
 void connectionstate_updated(sp_session* sess);
 void scrobble_error(sp_session* sess, sp_error err);
 void private_session_mode_changed(sp_session* sess, bool is_private);
 
 /* From euterpe.c: */
-int euterpe_init(sp_session** sess, const char* username, 
-                   const char* password, const char* blob);
+int euterpe_init(sp_session** sess, const char* username, const char* password);
 void euterpe_exit(sp_session* sess);
 void *euterpe_loop(void* arg);
 void euterpe_loop_activate(sp_session* sess);

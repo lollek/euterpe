@@ -19,6 +19,15 @@ void handle_input(sp_session *sess) {
         debug = !debug;
       } break;
 
+      case 'f': {
+        if (strlen(cmd) == 13 && debug && !strcmp(cmd, "force-update\n")) {
+          euterpe_loop_activate(sess);
+          printf("Forced update on euterpe-loop\n");
+        }
+        else
+          printf("Unknown command. Type h for help\n");
+      } break;
+
       case 'h': {
         printf("Commands:\n\n"
 
@@ -103,17 +112,24 @@ int main(int argc, char** argv) {
   char c, buf[256];
   char *username = NULL;
   char *password = NULL;
-  char *blob = NULL;
   sp_session *sess = NULL;
   
-  fprintf(stdout, "Euterpe v0.1.2\n\n");
+  fprintf(stdout, "Euterpe v0.1.3\n\n");
   
   /* Get argv's: */
-  while ((c = getopt(argc, argv, "dl:u:")) != -1) {
+  while ((c = getopt(argc, argv, "du:")) != -1) {
     switch (c) {
       case 'd': debug = 1; break;
       case 'u': username = optarg; break;
-      default: break;
+      default: {
+        printf("\n"
+               "Usage: %s <options>\n"
+               "Options:\n"
+               "-d\t\t - Start with debug-mode on\n"
+               "-u <username>\t - login with <username>\n",
+               argv[0]);
+        exit(1);
+      } break;
     }
   }
   
@@ -141,7 +157,7 @@ int main(int argc, char** argv) {
   }
   
   /* Create session: */
-  if (euterpe_init(&sess, username, password, blob) != 0
+  if (euterpe_init(&sess, username, password) != 0
       || sess == NULL) {
     printf("Failed to create a spotify session\n");
     return 1;

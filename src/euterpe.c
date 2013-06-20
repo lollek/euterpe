@@ -11,8 +11,7 @@ static pthread_t g_thread;
 static pthread_cond_t g_action_needed;
 static pthread_mutex_t g_mutex;
 
-int euterpe_init(sp_session** sess, const char* username, 
-                   const char* password, const char* blob) {
+int euterpe_init(sp_session** sess, const char* username, const char* password) {
 
   sp_session_config sess_conf;
   sp_session_callbacks callbacks;
@@ -31,7 +30,7 @@ int euterpe_init(sp_session** sess, const char* username,
     return 1;
   }
 
-  /* Set pre-login configuration: */
+  /* Set pre-init configuration: */
   callbacks.logged_in = &logged_in;
   callbacks.logged_out = &euterpe_exit;
   callbacks.metadata_updated = &metadata_updated;
@@ -49,7 +48,7 @@ int euterpe_init(sp_session** sess, const char* username,
   callbacks.get_audio_buffer_stats = &get_audio_buffer_stats;
   callbacks.offline_status_updated = &offline_status_updated;
   callbacks.offline_error = &offline_error;
-  callbacks.credentials_blob_updated = &credentials_blob_updated;
+  callbacks.credentials_blob_updated = NULL;
   callbacks.connectionstate_updated = &connectionstate_updated;
   callbacks.scrobble_error = &scrobble_error;
   callbacks.private_session_mode_changed = &private_session_mode_changed;
@@ -72,21 +71,18 @@ int euterpe_init(sp_session** sess, const char* username,
     return 1;
   }
   
-  /* Blob <-- Maybe remove??
-  if (blob != NULL) {
-    if ((err = sp_session_relogin(*sess)) == SP_ERROR_OK) {
-      fprintf(stdout, "Sent blob relogin request\n");
-      g_logged_in = 1;
-      return 0;
-    }
-    fprintf(stderr, "Unable to blob relogin: %s\n", sp_error_message(err));
-    fprintf(stdout, "Attempting normal login\n");
-  } */
+  /* Post-init configurations: */
+  err = sp_session_preferred_bitrate(*sess, SP_BITRATE_320k);
+  if (err != SP_ERROR_OK) {
+    fprintf(stderr, "Error while setting bitrate: %s\n", sp_error_message(err));
+  }
 
+  /* Login: */
   g_logged_in = 1;
-  sp_session_login(*sess, username, password, 0, blob);
+  sp_session_login(*sess, username, password, 0, NULL);
   fprintf(stdout, "Attempting login..\n");
 
+  /* Start thread to communicate with the libspotify API: */
   pthread_cond_init(&g_action_needed, NULL);
   pthread_create(&g_thread, NULL, euterpe_loop, sess);
 
@@ -95,7 +91,7 @@ int euterpe_init(sp_session** sess, const char* username,
 
 void euterpe_exit(sp_session* sess) {
 
-  fprintf(stdout, "Logging out..\n");
+  fprintf(stdout, "Shutting down ..\n");
   
   g_logged_in = 0;
   sp_session_logout(sess);
